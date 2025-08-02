@@ -5,25 +5,9 @@ import { DayBadge } from './day-badge';
 import { ExerciseCard } from './exercise-card';
 import { ExerciseForm } from './exercise-form';
 import { ExercisePicker } from './exercise-picker';
+import { useExerciseStore } from '@/store/exercise-store';
 import type { DayOfWeek, Exercise } from '@/types';
 import { DAYS_OF_WEEK } from '@/types';
-
-// Mock data for now - will be replaced with store
-const mockExercises: Record<string, Exercise> = {
-  '1': { id: '1', name: 'Bench Press', lastWeight: 60, lastReps: 10 },
-  '2': { id: '2', name: 'Squats', lastWeight: 80, lastReps: 12 },
-  '3': { id: '3', name: 'Deadlifts', lastWeight: 100, lastReps: 8 },
-  '4': { id: '4', name: 'Bicep Curls', lastWeight: 12, lastReps: 15 }, // Not assigned to any day
-  '5': { id: '5', name: 'Tricep Extensions', lastWeight: 10, lastReps: 12 }, // Not assigned to any day
-};
-
-const mockSchedule: Record<DayOfWeek, string[]> = {
-  mon: ['1', '2'],
-  tue: [],
-  wed: ['3'],
-  thu: ['1'],
-  fri: ['2', '3'],
-};
 
 export function WeekView() {
   const [activeDay, setActiveDay] = useState<DayOfWeek>('mon');
@@ -31,27 +15,34 @@ export function WeekView() {
   const [pickerOpen, setPickerOpen] = useState(false);
   const [editingExercise, setEditingExercise] = useState<Exercise | undefined>();
 
-  const getExerciseCount = (day: DayOfWeek) => mockSchedule[day]?.length || 0;
-  const getDayExercises = (day: DayOfWeek) => 
-    mockSchedule[day]?.map(id => mockExercises[id]).filter(Boolean) || [];
+  // Store hooks
+  const {
+    schedule,
+    addExercise,
+    updateExercise,
+    assignExerciseToDay,
+    removeExerciseFromDay,
+    getExercisesByDay,
+    getAvailableExercisesForDay,
+  } = useExerciseStore();
 
-  // Get all exercises not assigned to current day
-  const getAvailableExercises = () => {
-    const currentDayExerciseIds = mockSchedule[activeDay] || [];
-    return Object.values(mockExercises).filter(
-      exercise => !currentDayExerciseIds.includes(exercise.id)
-    );
-  };
+  const getExerciseCount = (day: DayOfWeek) => schedule[day]?.length || 0;
 
   const handleAddExercise = (exercise: Omit<Exercise, 'id'>) => {
-    // TODO: Add to store
-    console.log('Adding new exercise:', exercise);
+    if (editingExercise) {
+      // Update existing exercise
+      updateExercise(editingExercise.id, exercise);
+    } else {
+      // Add new exercise and assign to current day
+      const id = addExercise(exercise);
+      assignExerciseToDay(id, activeDay);
+    }
     setFormOpen(false);
+    setEditingExercise(undefined);
   };
 
   const handleSelectExistingExercise = (exercise: Exercise) => {
-    // TODO: Assign exercise to current day
-    console.log('Adding existing exercise to day:', exercise);
+    assignExerciseToDay(exercise.id, activeDay);
   };
 
   const handleEditExercise = (exercise: Exercise) => {
@@ -60,8 +51,7 @@ export function WeekView() {
   };
 
   const handleRemoveExercise = (exerciseId: string) => {
-    // TODO: Remove from day in store (not delete the exercise)
-    console.log('Removing exercise from day:', exerciseId);
+    removeExerciseFromDay(exerciseId, activeDay);
   };
 
   return (
@@ -99,8 +89,8 @@ export function WeekView() {
 
         {/* Exercise cards */}
         <div className="space-y-2">
-          {getDayExercises(activeDay).length > 0 ? (
-            getDayExercises(activeDay).map((exercise) => (
+          {getExercisesByDay(activeDay).length > 0 ? (
+            getExercisesByDay(activeDay).map((exercise) => (
               <ExerciseCard
                 key={exercise.id}
                 exercise={exercise}
@@ -120,7 +110,7 @@ export function WeekView() {
       <ExercisePicker
         open={pickerOpen}
         onOpenChange={setPickerOpen}
-        availableExercises={getAvailableExercises()}
+        availableExercises={getAvailableExercisesForDay(activeDay)}
         onSelectExercise={handleSelectExistingExercise}
         onCreateNew={() => {
           setPickerOpen(false);

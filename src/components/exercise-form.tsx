@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -13,9 +13,18 @@ interface ExerciseFormProps {
 }
 
 export function ExerciseForm({ open, onOpenChange, onSubmit, initialData }: ExerciseFormProps) {
-  const [name, setName] = useState(initialData?.name || '');
-  const [weight, setWeight] = useState(initialData?.lastWeight?.toString() || '');
-  const [reps, setReps] = useState(initialData?.lastReps?.toString() || '');
+  const [name, setName] = useState('');
+  const [weight, setWeight] = useState('');
+  const [reps, setReps] = useState('');
+
+  // Reset form when initialData changes or dialog opens
+  useEffect(() => {
+    if (open) {
+      setName(initialData?.name || '');
+      setWeight(initialData?.lastWeight?.toString() || '');
+      setReps(initialData?.lastReps?.toString() || '');
+    }
+  }, [open, initialData]);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -26,10 +35,6 @@ export function ExerciseForm({ open, onOpenChange, onSubmit, initialData }: Exer
         lastReps: parseInt(reps, 10)
       });
       onOpenChange(false);
-      // Reset form
-      setName('');
-      setWeight('');
-      setReps('');
     }
   };
 
