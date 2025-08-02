@@ -1,6 +1,21 @@
 import { WeekView } from '@/components/week-view';
+import { useIndexedDB } from '@/hooks/use-indexed-db';
 
 export default function App() {
+  const { isReady, error } = useIndexedDB();
+
+  if (!isReady) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <p className="text-muted-foreground">Loading...</p>
+      </div>
+    );
+  }
+
+  if (error) {
+    console.warn('IndexedDB failed, using localStorage fallback:', error);
+  }
+
   return (
     <div className="min-h-screen bg-background">
       <header className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
