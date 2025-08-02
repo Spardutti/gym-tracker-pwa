@@ -5,7 +5,6 @@ import { useExerciseStore } from '@/store/exercise-store';
 export function useIndexedDB() {
   const [isReady, setIsReady] = useState(false);
   const [error, setError] = useState<Error | null>(null);
-  const store = useExerciseStore();
 
   useEffect(() => {
     let mounted = true;
